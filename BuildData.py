@@ -20,20 +20,39 @@ class BuildTrainningData(object):
     self.buildDataFromNormal()
 
   def buildDataFromTumor(self):
-    wsiPaths = glob.glob(os.path.join(utils.TUMOR_TRAINNING_SLIDE_DIR, '*.tif'))
-    wsiPaths.sort()
-    xmlPaths = glob.glob(os.path.join(utils.XML_DIR, '*.xml'))
-    xmlPaths.sort()
+    wsiPaths = self.getFilePaths(utils.TUMOR_TRAINNING_SLIDE_DIR, '*.tif')
+    xmlPaths = self.getFilePaths(utils.XML_DIR, '*.xml')
     for wsiPath, xmlPath in zip(wsiPaths, xmlPaths):
-      print ("Current Process File Name:(Tumor Slide)")
-      print ("WSI: " + wsiPath)
-      print ("Annotation: " +  xmlPath)
+      self.printTumorSlideMessage(wsiPath, xmlPath)
 
       if self.fileMatchError(wsiPath, xmlPath):
-          print("ERROR:Filename mismatch!.")
-          break
+        printMatchError()
+        break
       else:
-          self.getTumorData(wsiPath, xmlPath)
+        self.getTumorData(wsiPath, xmlPath)
+
+  def buildDataFromNormal(self):
+    wsiPaths = self.getFilePaths(utils.NORMAL_TRAINNING_SLIDE_DIR, '*.tif')
+    for wsiPath in wsiPaths:
+      self.printNormalSlideMessage(wsiPath)
+      self.getNormalData(wsiPath)
+
+  def getFilePaths(self, fileDir, fileKind):
+    paths = glob.glob(os.path.join(fileDir, fileKind))
+    paths.sort()
+    return paths
+
+  def printTumorSlideMessage(self, wsiPath, xmlPath):
+    print ("Current Process File Name:(Tumor Slide)")
+    print ("WSI: " + wsiPath)
+    print ("Annotation: " +  xmlPath)
+
+  def printNormalSlideMessage(self, wsiPath):
+    print ("Current Process File Name:(Normal Slide)")
+    print ("WSI: " + wsiPath)
+
+  def printMatchError(self):
+    print("ERROR:Filename mismatch!.")
 
   def fileMatchError(self, wsiPath, xmlPath):
     matchError = False
@@ -49,16 +68,10 @@ class BuildTrainningData(object):
     tumor = TumorPreprocessing(wsiPath, xmlPath, self.positivePatchIndex, self.negativePatchIndex)
     self.positivePatchIndex, self.negativePatchIndex = tumor.tumorPreprocessing()
 
-  def buildDataFromNormal(self):
-    wsiPaths = glob.glob(os.path.join(utils.NORMAL_TRAINNING_SLIDE_DIR , '*.tif'))
-    for wsiPath in wsiPaths:
-      print ("Current Process File Name:(Normal Slide)")
-      print ("WSI: " + wsiPath)
-      self.getNormalData(wsiPath)
-
   def getNormalData(self, wsiPath):
-    tumor = NormalPreprocessing(wsiPath, self.positivePatchIndex)
-    self.positivePatchIndex = tumor.normalPreprocessing()
+    normal = NormalPreprocessing(wsiPath, self.positivePatchIndex)
+    self.positivePatchIndex = normal.normalPreprocessing()
 
+# Start the preprocessing
 btd = BuildTrainningData()
 btd.buildTrainningData()

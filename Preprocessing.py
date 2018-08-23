@@ -41,16 +41,8 @@ class TumorPreprocessing(object):
     roi = RoiOperation().getRoi(rgbImage)
     roiBoundingBoxes = RoiOperation().getRoiBoundingBoxes(roi, rgbImage)
 
-    # Use the higher level to get the accurate tumor
-    tumorLevel = 3
-    tumorLevelContours = TumorMaskOperation().getTumorContours(self.xmlDir, tumorLevel)
-    tumorMask = TumorMaskOperation().getTumorMask(wsiSlide, tumorLevelContours, tumorLevel)
-    # Need to resize the image to the ROI level
-    tumorMask = TumorMaskOperation().resizeTumorMask(tumorMask, roiLevel, tumorLevel)
-
-    # Bounding box is also in ROI level
-    roiLevelContours = TumorMaskOperation().getTumorContours(self.xmlDir, roiLevel)
-    tumorBoundingBoxes = TumorMaskOperation().getTumorBoundingBoxes(roiLevelContours)
+    tumorMask = self.getPreciseTumorMask(wsiSlide, roiLevel, 3)
+    tumorBoundingBoxes = self.getRoiLevelTumorBoundingBoxes(roiLevel)
 
     positivePatchIndex = ExtractPatches().extractPositivePatchesFromTumor(wsiSlide, tumorMask, roiLevel, tumorBoundingBoxes, self.positivePatchIndex)
     negativePatchIndex = ExtractPatches().extractNegativePatchesFromTumor(wsiSlide, tumorMask, roi, roiLevel, roiBoundingBoxes, self.negativePatchIndex)
@@ -61,3 +53,16 @@ class TumorPreprocessing(object):
     roiLevel = wsiSlide.level_count - 2
     rgbImage = np.array(wsiSlide.read_region((0, 0), roiLevel, wsiSlide.level_dimensions[roiLevel]))
     return wsiSlide, rgbImage, roiLevel
+
+  # Use the higher level to get the tumor, which has more precise shape
+  def getPreciseTumorMask(self, wsiSlide, roiLevel, preciseLevel):
+     tumorLevelContours = TumorMaskOperation().getTumorContours(self.xmlDir, preciseLevel)
+     tumorMask = TumorMaskOperation().getTumorMask(wsiSlide, tumorLevelContours, preciseLevel)
+     tumorMask = TumorMaskOperation().resizeTumorMask(tumorMask, roiLevel, preciseLevel)
+     return tumorMask
+
+  # Bounding box is still in ROI level
+  def getRoiLevelTumorBoundingBoxes(self, roiLevel):
+    roiLevelContours = TumorMaskOperation().getTumorContours(self.xmlDir, roiLevel)
+    tumorBoundingBoxes = TumorMaskOperation().getTumorBoundingBoxes(roiLevelContours)
+    return tumorBoundingBoxes

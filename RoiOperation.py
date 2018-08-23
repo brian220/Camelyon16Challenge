@@ -32,7 +32,6 @@ class ImageProcessing(object):
   def rgbToHsv(self, rgbImage):
     self.saveImage(rgbImage, "rgb")
     hsvImage = cv2.cvtColor(rgbImage, cv2.COLOR_BGR2HSV)
-    self.saveImage(hsvImage, "hsv")
     return hsvImage
 
   # set the color in the range lowerRed, upperRed 255, else 0
@@ -40,18 +39,7 @@ class ImageProcessing(object):
     lowerRed = np.array([20, 20, 70])
     upperRed = np.array([200, 200, 200])
     maskImage = cv2.inRange(hsvImage, lowerRed, upperRed)
-    #blackMask = self.blackMask(hsvImage)
-    #maskImage = maskImage - blackMask
-    self.saveImage(maskImage, "mask")
     return maskImage
-
-  # get rid of the black line
-  def blackMask(self, hsvImage):
-    lowerBlack = np.array([0,0,0])
-    upperBlack = np.array([180,255,46])
-    blackMask = cv2.inRange(hsvImage, lowerBlack, upperBlack)
-    self.saveImage(blackMask, "blackmask")
-    #return blackMask
 
   def closing(self, maskImage):
     closeKernel = np.ones((20, 20), dtype=np.uint8)
@@ -60,9 +48,9 @@ class ImageProcessing(object):
 
   def opening(self, closeImage):
     openKernel = np.ones((5, 5), dtype=np.uint8)
-    Roi = cv2.morphologyEx(np.array(closeImage), cv2.MORPH_OPEN, openKernel)
-    self.saveImage(Roi, "Roi")
-    return Roi
+    roi = cv2.morphologyEx(np.array(closeImage), cv2.MORPH_OPEN, openKernel)
+    #self.saveImage(Roi, "Roi")
+    return roi
 
   def saveImage(self, save, name):
     img = Image.fromarray(save)

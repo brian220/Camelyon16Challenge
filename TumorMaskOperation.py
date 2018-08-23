@@ -1,10 +1,8 @@
 import sys
 sys.path.append("../RoiOperation")
-from RoiOperation import ImageProcessing
 import cv2
 import numpy as np
 import xml.etree.cElementTree as ET
-from openslide import OpenSlide
 from PIL import Image
 
 class TumorMaskOperation(object):
@@ -50,8 +48,8 @@ class TumorMaskOperation(object):
     return tumorMask
 
   # Need to resize the image to the ROI level
-  def resizeTumorMask(self, tumorMask, roiLevel, tumorLevel):
-    resizeFactor = float(1.0 / pow(2, roiLevel - tumorLevel))
+  def resizeTumorMask(self, tumorMask, roiLevel, preciseLevel):
+    resizeFactor = float(1.0 / pow(2, roiLevel - preciseLevel))
     tumorMask = cv2.resize(np.array(tumorMask), (0, 0), fx = resizeFactor, fy = resizeFactor)
     return tumorMask
 
