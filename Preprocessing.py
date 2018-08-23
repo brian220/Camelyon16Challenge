@@ -1,7 +1,3 @@
-"""
-ICIAR2018 - Grand Challenge on Breast Cancer Histology Images
-https://iciar2018-challenge.grand-challenge.org/home/
-"""
 import sys
 sys.path.append("../RoiOperation")
 sys.path.append("../TumorMaskOperation")
@@ -11,16 +7,7 @@ from TumorMaskOperation import TumorMaskOperation
 from ExtractPatches import ExtractPatches
 import openslide
 from openslide import open_slide # http://openslide.org/api/python/
-import cv2
 import numpy as np
-import os
-
-slideDir = r'C:\Users\nctu\Desktop\Caymelon16Challenge\slide\tumor_005.tif'
-xmlDir = r'C:\Users\nctu\Desktop\Caymelon16Challenge\xmlFiles\tumor_005.xml'
-patchNormalNegativeSaveDir = r'C:\Users\nctu\Desktop\Caymelon16Challenge\patch\Normal'
-
-patchTumorPositiveSaveDir = r'C:\Users\nctu\Desktop\Caymelon16Challenge\patch\Tumor\positive'
-patchTumorNegativeSaveDir = r'C:\Users\nctu\Desktop\Caymelon16Challenge\patch\Tumor\negative'
 
 class NormalPreprocessing(object):
   def __init__(self, slideDir, positivePatchIndex):
@@ -32,8 +19,7 @@ class NormalPreprocessing(object):
     wsiSlide, rgbImage, levelUsed = self.scanFile()
     roi = RoiOperation().getRoi(rgbImage)
     roiBoundingBoxes = RoiOperation().getRoiBoundingBoxes(roi, rgbImage)
-    positivePatchIndex = ExtractPatches().extractNegativePatchesFromNormal(wsiSlide, roi, levelUsed, roiBoundingBoxes,
-                                                                         patchNormalNegativeSaveDir, self.positivePatchIndex)
+    positivePatchIndex = ExtractPatches().extractNegativePatchesFromNormal(wsiSlide, roi, levelUsed, roiBoundingBoxes, self.positivePatchIndex)
     return positivePatchIndex
 
   def scanFile(self):
@@ -57,21 +43,17 @@ class TumorPreprocessing(object):
 
     # Use the higher level to get the accurate tumor
     tumorLevel = 3
-    tumorLevelContours = TumorMaskOperation().getTumorContours(xmlDir, tumorLevel)
+    tumorLevelContours = TumorMaskOperation().getTumorContours(self.xmlDir, tumorLevel)
     tumorMask = TumorMaskOperation().getTumorMask(wsiSlide, tumorLevelContours, tumorLevel)
-    # Need to be resize the image to the ROI level
-    resizeFactor = float(1.0 / pow(2, roiLevel - tumorLevel))
-    tumorMask = cv2.resize(np.array(tumorMask), (0, 0), fx = resizeFactor, fy = resizeFactor)
+    # Need to resize the image to the ROI level
+    tumorMask = TumorMaskOperation().resizeTumorMask(tumorMask, roiLevel, tumorLevel)
+
     # Bounding box is also in ROI level
-    roiLevelContours = TumorMaskOperation().getTumorContours(xmlDir, roiLevel)
+    roiLevelContours = TumorMaskOperation().getTumorContours(self.xmlDir, roiLevel)
     tumorBoundingBoxes = TumorMaskOperation().getTumorBoundingBoxes(roiLevelContours)
 
-    positivePatchIndex = ExtractPatches().extractPositivePatchesFromTumor(wsiSlide, tumorMask, roiLevel, tumorBoundingBoxes,
-                                                                        patchTumorPositiveSaveDir, self.positivePatchIndex)
-
-    negativePatchIndex = ExtractPatches().extractNegativePatchesFromTumor(wsiSlide, tumorMask, roi, roiLevel, roiBoundingBoxes,
-                                                                        patchTumorNegativeSaveDir, self.negativePatchIndex)
-
+    positivePatchIndex = ExtractPatches().extractPositivePatchesFromTumor(wsiSlide, tumorMask, roiLevel, tumorBoundingBoxes, self.positivePatchIndex)
+    negativePatchIndex = ExtractPatches().extractNegativePatchesFromTumor(wsiSlide, tumorMask, roi, roiLevel, roiBoundingBoxes, self.negativePatchIndex)
     return positivePatchIndex, negativePatchIndex
 
   def scanFile(self):
@@ -79,6 +61,3 @@ class TumorPreprocessing(object):
     roiLevel = wsiSlide.level_count - 2
     rgbImage = np.array(wsiSlide.read_region((0, 0), roiLevel, wsiSlide.level_dimensions[roiLevel]))
     return wsiSlide, rgbImage, roiLevel
-
-tumor = TumorPreprocessing(slideDir, xmlDir, 0, 0)
-tumor.tumorPreprocessing()

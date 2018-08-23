@@ -20,7 +20,6 @@ class TumorMaskOperation(object):
       if(elem.get("Type") != "None"):
         contour = self.getContour(elem, downsample)
         contours.append(contour)
-    print(contours)
     return contours
 
   def getContour(self, elem, downsample):
@@ -48,6 +47,12 @@ class TumorMaskOperation(object):
     tumorMask = tumorMask.astype(np.uint8)
     lineColor = (255, 255, 255)
     cv2.drawContours(tumorMask, contours, -1, lineColor, -1)
+    return tumorMask
+
+  # Need to resize the image to the ROI level
+  def resizeTumorMask(self, tumorMask, roiLevel, tumorLevel):
+    resizeFactor = float(1.0 / pow(2, roiLevel - tumorLevel))
+    tumorMask = cv2.resize(np.array(tumorMask), (0, 0), fx = resizeFactor, fy = resizeFactor)
     return tumorMask
 
   # get the bounding boxes from the contours
