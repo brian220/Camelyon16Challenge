@@ -72,6 +72,10 @@ class BuildTrainningData(object):
     normal = NormalPreprocessing(wsiPath, self.positivePatchIndex)
     self.positivePatchIndex = normal.normalPreprocessing()
 
-# Start the preprocessing
-btd = BuildTrainningData()
-btd.buildTrainningData()
+def main():
+  # Start the preprocessing
+  btd = BuildTrainningData()
+  btd.buildTrainningData()
+
+if __name__== "__main__":
+  main()

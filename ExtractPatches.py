@@ -2,6 +2,8 @@ import sys
 sys.path.append("../Utils")
 import Utils as utils
 import numpy as np
+from PIL import Image
+import cv2
 
 class ExtractPatches(object):
   def __init__(self):
@@ -14,7 +16,7 @@ class ExtractPatches(object):
       for x, y in zip(X, Y):
         if int(tumorMask[y, x]) is utils.PIXEL_WHITE:
           self.savePatch(x, y, magFactor, wsiSlide,  utils.PATCH_POSITIVE_SAVE_DIR, "Positive", patchIndex)
-          patchIndex += 1
+          patchIndex += 2
     return patchIndex
 
   def extractNegativePatchesFromTumor(self, wsiSlide, tumorMask, roi, levelUsed, roiBoundingBoxes, patchIndex):
@@ -24,7 +26,7 @@ class ExtractPatches(object):
       for x, y in zip(X, Y):
          if int(tumorMask[y, x]) is not utils.PIXEL_WHITE and int(roi[y, x]) is not utils.PIXEL_BLACK:
            self.savePatch(x, y, magFactor, wsiSlide, utils.PATCH_NEGATIVE_SAVE_DIR, "Negative", patchIndex)
-           patchIndex += 1
+           patchIndex += 2
     return patchIndex
 
   def extractNegativePatchesFromNormal(self, wsiSlide, roi, levelUsed, roiBoundingBoxes, patchIndex):
@@ -34,7 +36,7 @@ class ExtractPatches(object):
       for x, y in zip(X, Y):
         if int(roi[y, x]) is not utils.PIXEL_BLACK:
           self.savePatch(x, y, magFactor, wsiSlide,  utils.PATCH_NEGATIVE_SAVE_DIR, "Negative", patchIndex)
-          patchIndex += 1
+          patchIndex += 2
     return patchIndex
 
   def getRandomPointsInBoundingBox(self, boundingBox, patchesNumber):
@@ -46,7 +48,21 @@ class ExtractPatches(object):
     Y = np.random.random_integers(yStart, high = yEnd - 1, size = patchesNumber)
     return X, Y
 
+  # save two patches, original patch and horizontal flip patch
   def savePatch(self, x, y, magFactor, wsiSlide, patchSaveDir, patchPrefix, patchIndex):
     patch = wsiSlide.read_region((x * magFactor, y * magFactor), 0, (utils.PATCH_SIZE, utils.PATCH_SIZE))
     patch.save(str(patchSaveDir) + '\\' + patchPrefix + str(patchIndex) + '.png')
+
+    flipPatch = DataAugmentation().getHorizontalFlipPatch(patch)
+    flipPatch.save(str(patchSaveDir) + '\\' + patchPrefix + str(patchIndex + 1) + '.png')
+
     patch.close()
+
+class DataAugmentation(object):
+  def __init__(self):
+    pass
+  #def getCropPatch(self, patch):
+  def getHorizontalFlipPatch(self, patch):
+    flipPatch = cv2.flip(np.array(patch), 1)
+    flipPatch = Image.fromarray(flipPatch)
+    return flipPatch
